@@ -1,0 +1,87 @@
+{% extends "layout.twig" %}
+{% block title %}Conta #{{ account.id }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center">
+  <h1 class="h4 mb-0">Conta #{{ account.id }} — {{ account.ownerName }}</h1>
+  <a class="btn btn-outline-secondary btn-sm" href="/admin/accounts/{{ account.id }}/edit"><i class="bi bi-pencil me-1"></i>Editar</a>
+</div>
+<div class="alert alert-info mb-3">Saldo atual: <strong>R$ {{ account.balance|number_format(2, ',', '.') }}</strong></div>
+{% if get.query.error is defined and get.query.error == 'saldo' %}
+  <div class="alert alert-danger">Saldo insuficiente para débito.</div>
+{% endif %}
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card p-3">
+      <div class="mb-2 fw-semibold">Creditar</div>
+      <form method="post" action="/accounts/{{ account.id }}/credit">
+        <div class="mb-2">
+          <div class="input-group">
+            <span class="input-group-text">R$</span>
+            <input class="form-control js-money" name="amount" placeholder="0,00" inputmode="numeric" required>
+          </div>
+        </div>
+        <button class="btn btn-success">Creditar</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card p-3">
+      <div class="mb-2 fw-semibold">Debitar</div>
+      <form method="post" action="/accounts/{{ account.id }}/debit">
+        <div class="mb-2">
+          <div class="input-group">
+            <span class="input-group-text">R$</span>
+            <input class="form-control js-money" name="amount" placeholder="0,00" inputmode="numeric" required>
+          </div>
+        </div>
+        <button class="btn btn-warning">Debitar</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card p-3">
+      <div class="mb-2 fw-semibold">Transferir</div>
+      <form method="post" action="/accounts/transfer">
+        <input type="hidden" name="from" value="{{ account.id }}">
+        <div class="mb-2">
+          <input class="form-control" name="to" placeholder="Conta destino (ID)" required>
+        </div>
+        <div class="mb-2">
+          <div class="input-group">
+            <span class="input-group-text">R$</span>
+            <input class="form-control js-money" name="amount" placeholder="0,00" inputmode="numeric" required>
+          </div>
+        </div>
+        <button class="btn btn-primary">Transferir</button>
+      </form>
+    </div>
+  </div>
+</div>
+<div class="card p-0 mt-3">
+  <div class="p-3 pb-0 fw-semibold">Extrato</div>
+  <div class="table-responsive">
+    <table class="table table-striped table-min mb-0">
+      <thead>
+        <tr><th>#</th><th>Data</th><th>Tipo</th><th>Valor</th><th>Saldo após</th></tr>
+      </thead>
+      <tbody>
+      {% for t in txs %}
+        <tr>
+          <td>{{ t.id }}</td>
+          <td>{{ t.createdAt|date('d/m/Y H:i:s') }}</td>
+          <td>
+            {% set labels = {'CREDIT':'Crédito','DEBIT':'Débito','TRANSFER_IN':'Transf. Entrada','TRANSFER_OUT':'Transf. Saída'} %}
+            {% set styles = {'CREDIT':'success','DEBIT':'danger','TRANSFER_IN':'info','TRANSFER_OUT':'warning'} %}
+            <span class="badge bg-{{ styles[t.type]|default('secondary') }}">{{ labels[t.type]|default(t.type) }}</span>
+          </td>
+          <td>R$ {{ t.amount|number_format(2, ',', '.') }}</td>
+          <td>R$ {{ t.balanceAfter|number_format(2, ',', '.') }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="text-center p-4 text-muted">Sem movimentações</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
